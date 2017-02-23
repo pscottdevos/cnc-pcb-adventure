@@ -390,9 +390,24 @@ above, it is easy to see how these are connected. what isn't clear is whether
 the board converts the active low signal ports to normal high signal or not.
 I will have to do some testing to determine that.
 
+Here's what I found. All of the inputs are pulled high with a pull-up resistor.
+What you do is connect your normally-closed switch(es) from GND to an input.
+This will hold the input to Ground until a switch opens in which case it gets
+pulled high. Normally this will be considered an error condition and hald the
+CNC machine. If you need to use a normally-open switch for something, you can
+tell the software to work the other way around.
+
 Note that the 5V terminal is *not* powered by the usb connector. The image
 describes it as 5V power output, but I don't know from where it gets it's
-power. From the 24V input maybe?
+power. From the 24V input maybe? Yes. that turns out to be exactly right.
+
+Here is the right block all wired up:
+
+.. image:: images/right-block-wired.jpg
+
+The red wire runs to the emergency stop button and the green wire runs to
+the `limit switches`_ I installed.
+
 
 Left Terminal Block
 +++++++++++++++++++
@@ -424,6 +439,18 @@ that power applied to this terminal is used to power the relays on the board.
 One of these relays could be used to turn the spindle motor on and off. With
 the current controller, that operation is performed manually.
 
+Yes, I have found that the 24V and GND terminals provide power for the relay
+and the +5V terminal on the right block.
+
+Here is the left block wired. I'm not using the relays at this time:
+
+.. image:: images/left-block-wired.jpg
+
+I connected the +24V and GND connections by splicing into the 24V/GND lines
+running to the system fan:
+
+.. image:: images/24V-splice.jpg
+
 Center Terminal Block
 +++++++++++++++++++++
 
@@ -443,17 +470,165 @@ in the board description sounds like the USB port provides this. Alternately,
 it might be driven by the pulse width applied to pin P1. This will also need
 experimentation.
 
-Computer
-~~~~~~~~
+Here is the center block wired up:
 
-I have an old Dell Pentium 4 computer with an onboard parallel port(!) and
-Fedora Linux on it that my daughters used before I bought them laptops.
-My plan is to install LinuxCNC on it, but first I need to save all of my
-daughter's files off of it because the Lord knows they would never do a
-backup.
+.. image:: images/center-block-wired.jpg
 
-
-Screw Pitch
+Drive Cable
 +++++++++++
 
-76 screw turns over 6 inches
+All drive lines to the CNC machine are passed through a built-to-purpose
+cable with Centronics 36-pin connectors at each end.
+
+.. image:: images/drive-cable.jpg
+
+.. image:: images/drive-cable-connector.jpg
+
+Each of the drive lines is connect to two adjacent pins to provide sufficient
+current to the motors as shown in the photo. I added the green and black
+wires which connect the input, IN2 on the controller card, to the series
+`limit switches`_ I installed on each of the axis of the CNC machine.
+
+Inside the drive cable, it's the same story. Each drive wire is connected to
+a pair of pins.
+
+.. image:: images/inside-drive-cable.jpg
+
+Again the yellow and black wires were added for the `limit switches`_ (I ran
+out of green wire). I pushed each of these two wires down through the cable
+housing, soldered them at each end and covered each connector using
+heat-shrink tubing.
+
+Axis Drives
+~~~~~~~~~~~
+
+Each of the three axis of this machine consists of a four-wire stepper motor
+which drives a threaded rod.
+
+Stepper Motors
+++++++++++++++
+
+My understanding is that most stepper motors
+of this type have a resolution of 200 steps per revolution with either 2, 4,
+or 8 "microsteps" possible.
+
+The are described in the Ebay description as "Stepping motor type 57
+two-phase 1.45A-2A". The type 57 really just means that the mounting
+faceplate is 57mm x 57mm in size so this doesn't really tell us much.
+
+Since I have no documentation on these motors and they sport no brand or
+model information, I'm just going to have to play with them to figure
+out the details.
+
+Threaded Rod
+++++++++++++
+
+I measure approximately 76 turns over a length of 6 inches on these rods
+which is about 12 2/3 turns per inch. Looking around a bit on the Internet
+I found this `conversion chart`__ that shows standard pitch values for
+threaded rod. On the chart we see that 12.7 per inch is a standard size
+equal to 2.0 mm per turn. I'm going to guess that this is the pitch of my
+rods.
+
+__ http://www.newmantools.com/tech/pitchconversions.htm
+
+I'm pretty sure I'm going to need this information later when I configure
+LinuxCNC.
+
+Spindle
+~~~~~~~
+
+The Ebay description of the spindle motor is 300W, DC 300 - 8000RPM with
+PWM (pulse width modulation) speed regulation. While it claims PWM speed
+regulation, I have verified with an oscilloscope that the provided controller
+box uses variable DC voltage to control the speed of the spindle.
+
+Other Specifications
+~~~~~~~~~~~~~~~~~~~~
+
+The claimed empty line speed is 0-2500mm per minute while the carving speed
+is claimed at 0-2000mm per minute depending on material. I will have to run
+some tests to verify these claims.
+
+Wiring Tracks
++++++++++++++
+
+The wires to the motors are threaded through plastic, flexible wire guides.
+
+.. image:: images/x-axis-wiring-track.jpg
+
+.. image:: images/y-axis-wiring-track.jpg
+
+The wires to the Z-axis stepper motor and the spindle motor are connected
+via connectors so I was able to disconnect them and lay the wire guide flat.
+This allowed me to push a pair of wires for the Z-axis through the track.
+
+.. image:: images/
+
+
+.. _`limit switches`:
+
+Limit Switches
+~~~~~~~~~~~~~~
+
+I'm very new to this, so I'm pretty sure I will damage my CNC machine if I
+don't make use of limit switches. Unfortunately, my machine did not come
+with limit switches so I have to install my own.
+
+I ordered a set of `micro switches`__ from Ebay_.
+
+__ http://www.ebay.com/itm/291977499433?_trksid=p2060353.m2749.l2649&ssPageName=STRK%3AMEBIDX%3AIT
+
+.. _ebay: http://www.ebay.com
+
+Wiring
+++++++
+
+Professional CNC machines have a pair of limit switches and a home switch for
+each axis. The limit switches prevent the machine attempting to move beyond
+its physical limitations while the home switch is used to determine the
+"home" which is simply a known location for each axis. Home can be at 0, 0, 0
+or it can be somewhere else. One configures the software with where in
+Axis-space home is located.
+
+Home CNC machines often forgo the separate home switches. After all, there is
+no reason in the world that the physical machine limit cannot also be considered
+the "home" position.  
+
+Home CNC machines also will have two or more of the limit switches wired in
+series (or parallel: more on this later_) in order to save inputs.
+Since parallel printer port boards only support five inputs. We don't have
+enough inputs to wire all six limit switches indendently. In my
+case, I needed to add a pair of wires for each input I wired inside an
+existing cable. Getting just a single pair pushed through an existing
+cable housing was challening enough for me! I went with the simplest
+possible configuration: I wired all six switches in series. The software
+is smart enough to know which switch it triggered while homing because it
+homes one axis at a time.
+
+Computer
+--------
+
+I purchased a Dell Core 2 Duo computer_ from ebay_ which comes with a
+parallel port. It was just under $40.00 with shipping. When it arrived, the
+hard drive turned out to be DOA, but the celler send me another and now it
+is working fine.
+
+.. _computer: http://www.ebay.com/itm/172284673236?_trksid=p2060353.m2749.l2649&ssPageName=STRK%3AMEBIDX%3AIT
+
+.. _ebay: http://www.ebay.com
+
+I intentionally purchased a computer with no OS because my plan is to use
+LinuxCNC_ to drive the CNC machine.
+
+.. _LinuxCNC: http://linuxcnc.org
+
+I have an old LCD monitor for the display. I use a USB 2.0 2-port USB
+switch to switch my keyboard and mouse between my day-to-day-use laptop
+and the CNC driver.
+
+.. image:: images/usb-switch.jpg
+
+.. image:: images/monitor.jpg
+
+

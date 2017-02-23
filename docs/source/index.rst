@@ -8,3 +8,4 @@ Contents:
 
   background/index
   equipment/index
+  configuration/index
